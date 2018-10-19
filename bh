@@ -1,0 +1,105 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+
+WHITELIST = '/etc/ban_hammer/whitelist'.freeze
+BLACKLIST = '/etc/ban_hammer/blacklist'.freeze
+
+def readlist(filename)
+  path = File.dirname(filename)
+
+  FileUtils.mkdir_p(path) unless File.directory?(path)
+
+  l = []
+  File.open(filename, 'r').each do |line|
+    l << line.chomp
+  end
+
+  l
+end
+
+def readhash(filename)
+  x = readlist(filename)
+
+  h = {}
+  x.each do |line|
+    y = line.split(/\s+/)
+    h[y.first] = y.last
+  end
+
+  h
+end
+
+def save_blacklist(b)
+  f = File.open(BLACKLIST, 'w')
+  b.each do |ip_address, ts|
+    f.puts "#{ip_address} #{ts}"
+  end
+  f.close
+end
+
+def existing
+  x = `ufw status numbered`
+  h = {}
+  x.split("\n").each do |line|
+    next unless line.include?('DENY IN')
+
+    line = line.delete('[').delete(']').strip
+    y = line.split(/\s+/)
+    h[y.last] = y.first
+  end
+  h
+end
+
+w = readlist(WHITELIST)
+b = readhash(BLACKLIST)
+e = existing
+
+unless ARGV[0]
+  puts 'No command given'
+  exit(1)
+end
+
+cmd = ARGV[0].downcase
+
+case cmd
+when 'update'
+  missing = 0
+
+  puts 'Checking that ufw is up to date'
+  b.each do |ip_address, _|
+    next if e.key?(ip_address)
+
+    puts "-- #{ip_address} was missing"
+    missing += 1
+    `ufw insert 1 deny from #{ip_address}`
+  end
+  puts "There are #{b.size} banned addresses, #{missing} were missing"
+when 'show'
+  puts "Whitelist (#{WHITELIST})"
+  w.each do |ip_address|
+    puts "- #{ip_address}"
+  end
+  puts
+  puts "Blacklist (#{BLACKLIST})"
+  b.each do |ip_address, _|
+    puts "- #{ip_address}"
+  end
+  puts
+else
+  # It's an address to ban
+
+  if w.include?(cmd)
+    puts "#{cmd} is in the whitelist"
+  elsif b.key?(cmd)
+    puts "#{cmd} is already blacklisted. Bumping timestamp"
+    b[cmd] = Time.now.to_i
+    `ufw insert 1 deny from #{cmd}`
+    save_blacklist(b)
+  else
+    puts "#{cmd} added to blacklist"
+    `ufw insert 1 deny from #{cmd}`
+    b[cmd] = Time.now.to_i
+    save_blacklist(b)
+  end
+end
