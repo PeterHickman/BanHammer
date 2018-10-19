@@ -11,8 +11,13 @@ def readlist(filename)
   FileUtils.mkdir_p(path) unless File.directory?(path)
 
   l = []
-  File.open(filename, 'r').each do |line|
-    l << line.chomp
+
+  if File.exist?(filename)
+    File.open(filename, 'r').each do |line|
+      l << line.chomp
+    end
+  else
+    FileUtils.touch(filename)
   end
 
   l
