@@ -30,7 +30,13 @@ def readhash(filename)
   h
 end
 
-def save_blacklist(b)
+def save_blacklist(b, ip_address = nil)
+  unless ip_address.nil?
+    b[ip_address] = Time.now.to_i
+
+    `ufw insert 1 deny from #{ip_address}` unless b.key?(ip_address)
+  end
+
   f = File.open(BLACKLIST, 'w')
   b.each do |ip_address, ts|
     f.puts "#{ip_address} #{ts}"
@@ -60,7 +66,7 @@ unless ARGV[0]
   exit(1)
 end
 
-cmd = ARGV[0].downcase
+cmd = ARGV.shift.downcase
 
 case cmd
 when 'update'
@@ -93,13 +99,9 @@ else
     puts "#{cmd} is in the whitelist"
   elsif b.key?(cmd)
     puts "#{cmd} is already blacklisted. Bumping timestamp"
-    b[cmd] = Time.now.to_i
-    `ufw insert 1 deny from #{cmd}`
-    save_blacklist(b)
+    save_blacklist(b, cmd)
   else
     puts "#{cmd} added to blacklist"
-    `ufw insert 1 deny from #{cmd}`
-    b[cmd] = Time.now.to_i
-    save_blacklist(b)
+    save_blacklist(b, cmd)
   end
 end
