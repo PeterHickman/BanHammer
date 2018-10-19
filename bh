@@ -92,16 +92,53 @@ when 'show'
     puts "- #{ip_address}"
   end
   puts
-else
+when 'add'
   # It's an address to ban
 
-  if w.include?(cmd)
-    puts "#{cmd} is in the whitelist"
-  elsif b.key?(cmd)
-    puts "#{cmd} is already blacklisted. Bumping timestamp"
-    save_blacklist(b, cmd)
-  else
-    puts "#{cmd} added to blacklist"
-    save_blacklist(b, cmd)
+  if ARGV[0].nil?
+    puts 'No address given to ban'
+    exit(1)
   end
+
+  ip_address = ARGV.shift
+
+  if w.include?(ip_address)
+    puts "#{ip_address} is in the whitelist"
+  elsif b.key?(ip_address)
+    puts "#{ip_address} is already blacklisted. Bumping timestamp"
+    save_blacklist(b, ip_address)
+  else
+    puts "#{ip_address} added to blacklist"
+    save_blacklist(b, ip_address)
+  end
+when 'remove'
+  # It's an address to unban
+
+  if ARGV[0].nil?
+    puts 'No address given to ban'
+    exit(1)
+  end
+
+  ip_address = ARGV.shift
+  found = false
+
+  if b.key?(ip_address)
+    b.delete(ip_address)
+    save_blacklist(b)
+    found = true
+  end
+
+  if e.key?(ip_address)
+    number = e[ip_address]
+    `echo y | ufw delete #{number}`
+    found = true
+  end
+
+  if found
+    puts "#{ip_address} removed from blacklist"
+  else
+    puts "#{ip_address} is not in the blacklist"
+  end
+else
+  puts "Unknown command [#{cmd}]"
 end
