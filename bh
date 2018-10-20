@@ -225,7 +225,7 @@ when 'add'
   command_add(ip_address)
 when 'remove'
   if ARGV[0].nil?
-    puts 'No address given to ban'
+    puts 'No address given to remove'
     exit(1)
   end
 
@@ -234,7 +234,7 @@ when 'remove'
   command_remove(ip_address)
 when 'import'
   if ARGV[0].nil?
-    puts "No subcommand given for 'import', should be 'ufw'"
+    puts "No subcommand given for 'import', should be 'ufw' or 'auth'"
     exit(1)
   end
 
