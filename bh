@@ -122,6 +122,36 @@ def command_remove(ip_address)
   end
 end
 
+def command_import_ufw(filename)
+  ##
+  # Filters the ufw.log file and gets a list of addresses that
+  # were blocked. If any of the addresses are already in the 
+  # blacklist then their timestamp is bumped
+  ##
+
+  a = Hash.new(0)
+
+  File.open(filename, 'r').each do |line|
+    # We are only looking for addresses that ufw has blocked ...
+    next unless line.include?('UFW BLOCK')
+
+    # ... and they must be inbound only
+    next unless line.include?('OUT= ')
+
+    address = line.split(/\s+/).select { |x| x.index('SRC=') == 0 }
+
+    next unless address.any?
+
+    address = address.first.delete('SRC=')
+
+    a[address] += 1
+  end
+
+  a.each do |address, count|
+    puts "#{count} #{address} #{$blacklist.key?(address)}"
+  end
+end
+
 $whitelist = readlist(WHITELIST)
 $blacklist = readhash(BLACKLIST)
 $existing = existing
@@ -156,6 +186,31 @@ when 'remove'
   ip_address = ARGV.shift
 
   command_remove(ip_address)
+when 'import'
+  if ARGV[0].nil?
+    puts "No subcommand given for 'import', should be 'ufw'"
+    exit(1)
+  end
+
+  sub_command = ARGV.shift.downcase
+  case sub_command
+  when 'ufw'
+    if ARGV[0].nil?
+      puts "No file given for 'import ufw'"
+      exit(1)
+    end
+
+    filename = ARGV.shift.downcase
+
+    unless File.exist?(filename)
+      puts "[#{filename}] not found"
+      exit(1)
+    end
+
+    command_import_ufw(filename)
+  else
+    puts "Unrecognised subcommand [#{sub_command}] for 'import'"
+  end
 else
   puts "Unknown command [#{cmd}]"
 end
