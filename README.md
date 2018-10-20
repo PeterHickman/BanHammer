@@ -57,9 +57,19 @@ Adds a given ip address to the blacklist and gets `ufw` to block it. Unless:
 
 Removes the given ip address from the blacklist and get `ufw` to forget it. It will also remove the address from `ufw` even if it is not in the blacklist (in case someone blocked it without `bh`)
 
+### `import ufw <filename>`
+
+Filters the ufw.log file and gets a list of addresses that were blocked. If any of the addresses are already in the blacklist then their timestamp is bumped
+
+### `import auth <filename>`
+
+Filter the auth.log file and find out who has been grinding at the ssh service and ban them. Only actually ban them when they hit > 100 attempts
+
 ## Using it
 
-Various tools frequently collect addresses from the log files (`/var/log/auth.log` and the web server logs being the best places to look) and these are fed into `bh`. Additionally `/var/log/ufw.log` will list the banned addresses who have not taken the hint
+The initial population of the blacklist can come from the `import auth /var/log/auth.log` command followed, perhaps, with a daily cron task to keep it up to date. Similary a cron to run `import ufw /var/log/ufw.log` will make sure that we are keeping up to date with the repeat offenders
+
+Another good source of miscreants are the various web server logs. However this is more site specific so I have no general script to offer at this point that won't generate false positives
 
 Each time an address is banned it's timestamp is incremented so addresses with older timestamps have either been cleaned up, gone offline or given up and can be removed from the blacklist. Otherwise it would simply get too damn big
 
