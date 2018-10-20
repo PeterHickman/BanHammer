@@ -76,6 +76,31 @@ def strip_address(line)
   end
 end
 
+def get_address(error_message)
+  if ARGV[0].nil?
+    puts error_message
+    exit(1)
+  end
+
+  ARGV.shift
+end
+
+def get_filename(error_message)
+  if ARGV[0].nil?
+    puts error_message
+    exit(1)
+  end
+
+  filename = ARGV.shift.downcase
+
+  unless File.exist?(filename)
+    puts "[#{filename}] not found"
+    exit(1)
+  end
+
+  filename
+end
+
 def command_update
   missing = 0
 
@@ -215,21 +240,11 @@ when 'update'
 when 'show'
   command_show
 when 'add'
-  if ARGV[0].nil?
-    puts 'No address given to ban'
-    exit(1)
-  end
-
-  ip_address = ARGV.shift
+  ip_address = get_address('No address given to ban')
 
   command_add(ip_address)
 when 'remove'
-  if ARGV[0].nil?
-    puts 'No address given to remove'
-    exit(1)
-  end
-
-  ip_address = ARGV.shift
+  ip_address = get_address('No address given to remove')
 
   command_remove(ip_address)
 when 'import'
@@ -240,17 +255,7 @@ when 'import'
 
   sub_command = ARGV.shift.downcase
 
-  if ARGV[0].nil?
-    puts "No file given for 'import #{sub_command}'"
-    exit(1)
-  end
-
-  filename = ARGV.shift.downcase
-
-  unless File.exist?(filename)
-    puts "[#{filename}] not found"
-    exit(1)
-  end
+  filename = get_filename("No file given for 'import #{sub_command}'")
 
   case sub_command
   when 'ufw'
