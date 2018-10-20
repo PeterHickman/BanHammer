@@ -30,6 +30,7 @@ fi
 create_blank $WHITELIST
 create_blank $BLACKLIST
 
+echo
 echo "Make sure that you populate $WHITELIST"
 echo "with a list of the addresses you never"
 echo "want to be banned"
