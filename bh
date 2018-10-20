@@ -5,6 +5,9 @@ require 'fileutils'
 WHITELIST = '/etc/ban_hammer/whitelist'.freeze
 BLACKLIST = '/etc/ban_hammer/blacklist'.freeze
 
+RE_IP_ADDRESS = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
+RE_FROM = / from ([^ ]+) /
+
 def readlist(filename)
   path = File.dirname(filename)
 
@@ -43,8 +46,8 @@ def save_blacklist(ip_address = nil)
   end
 
   f = File.open(BLACKLIST, 'w')
-  $blacklist.each do |ip_address, ts|
-    f.puts "#{ip_address} #{ts}"
+  $blacklist.each do |blacklisted_ip_address, ts|
+    f.puts "#{blacklisted_ip_address} #{ts}"
   end
   f.close
 end
@@ -60,6 +63,13 @@ def existing
     h[y.last] = y.first
   end
   h
+end
+
+def strip_address(line)
+  m = RE_FROM.match(line)
+  ip_address = m[1]
+  return nil unless ip_address =~ RE_IP_ADDRESS
+  ip_address
 end
 
 def command_update
@@ -125,7 +135,7 @@ end
 def command_import_ufw(filename)
   ##
   # Filters the ufw.log file and gets a list of addresses that
-  # were blocked. If any of the addresses are already in the 
+  # were blocked. If any of the addresses are already in the
   # blacklist then their timestamp is bumped
   ##
 
@@ -140,7 +150,7 @@ def command_import_ufw(filename)
     # ... and they must be inbound only
     next unless line.include?('OUT= ')
 
-    address = line.split(/\s+/).select { |x| x.index('SRC=') == 0 }
+    address = line.split(/\s+/).select { |x| x.index('SRC=').zero? }
 
     next unless address.any?
 
@@ -149,7 +159,7 @@ def command_import_ufw(filename)
     a[address] += 1
   end
 
-  a.each do |address, count|
+  a.each do |address, _|
     next unless $blacklist.key?(address)
     $blacklist[address] = Time.now.to_i
     puts "#{address} found. Bumping timestamp"
@@ -171,20 +181,15 @@ def command_import_auth(filename)
     next unless line.include?('sshd[')
 
     if line.include?('not allowed because none')
-      line =~ / from ([^ ]+) /
-      ip_address = $1
-      next unless ip_address =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
-      a[ip_address] += 1
+      a[strip_address(line)] += 1
     elsif line.include?(' Invalid user ')
-      line =~ / from ([^ ]+) /
-      ip_address = $1
-      next unless ip_address =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
-      a[ip_address] += 1
+      a[strip_address(line)] += 1
     end
   end
 
   a.each do |ip_address, count|
     next if count < 100
+    next if ip_address.nil?
     command_add(ip_address)
   end
 end
