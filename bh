@@ -6,7 +6,7 @@ WHITELIST = '/etc/ban_hammer/whitelist'.freeze
 BLACKLIST = '/etc/ban_hammer/blacklist'.freeze
 
 RE_IP_ADDRESS = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
-RE_FROM = / from ([^ ]+) /
+RE_FROM = / from ([^ ]+)\s+/
 
 def readlist(filename)
   path = File.dirname(filename)
@@ -66,10 +66,14 @@ def existing
 end
 
 def strip_address(line)
-  m = RE_FROM.match(line)
-  ip_address = m[1]
-  return nil unless ip_address =~ RE_IP_ADDRESS
-  ip_address
+  begin
+    m = RE_FROM.match(line)
+    ip_address = m[1]
+    return nil unless ip_address =~ RE_IP_ADDRESS
+    return ip_address
+  rescue
+    return nil
+  end
 end
 
 def command_update
