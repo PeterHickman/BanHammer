@@ -129,6 +129,8 @@ def command_import_ufw(filename)
   # blacklist then their timestamp is bumped
   ##
 
+  puts "Scanning ufw.log #{filename} for repeat offenders"
+
   a = Hash.new(0)
 
   File.open(filename, 'r').each do |line|
@@ -148,7 +150,42 @@ def command_import_ufw(filename)
   end
 
   a.each do |address, count|
-    puts "#{count} #{address} #{$blacklist.key?(address)}"
+    next unless $blacklist.key?(address)
+    $blacklist[address] = Time.now.to_i
+    puts "#{address} found. Bumping timestamp"
+  end
+end
+
+def command_import_auth(filename)
+  ##
+  # Filter the auth.log file and find out who has been grinding
+  # at the ssh service and ban them. Only actually ban them when
+  # they hit > 100 attempts
+  ##
+
+  puts "Filtering auth.log #{filename} for addresses to ban"
+
+  a = Hash.new(0)
+
+  File.open(filename, 'r').each do |line|
+    next unless line.include?('sshd[')
+
+    if line.include?('not allowed because none')
+      line =~ / from ([^ ]+) /
+      ip_address = $1
+      next unless ip_address =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
+      a[ip_address] += 1
+    elsif line.include?(' Invalid user ')
+      line =~ / from ([^ ]+) /
+      ip_address = $1
+      next unless ip_address =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
+      a[ip_address] += 1
+    end
+  end
+
+  a.each do |ip_address, count|
+    next if count < 100
+    command_add(ip_address)
   end
 end
 
@@ -193,21 +230,24 @@ when 'import'
   end
 
   sub_command = ARGV.shift.downcase
+
+  if ARGV[0].nil?
+    puts "No file given for 'import #{sub_command}'"
+    exit(1)
+  end
+
+  filename = ARGV.shift.downcase
+
+  unless File.exist?(filename)
+    puts "[#{filename}] not found"
+    exit(1)
+  end
+
   case sub_command
   when 'ufw'
-    if ARGV[0].nil?
-      puts "No file given for 'import ufw'"
-      exit(1)
-    end
-
-    filename = ARGV.shift.downcase
-
-    unless File.exist?(filename)
-      puts "[#{filename}] not found"
-      exit(1)
-    end
-
     command_import_ufw(filename)
+  when 'auth'
+    command_import_auth(filename)
   else
     puts "Unrecognised subcommand [#{sub_command}] for 'import'"
   end
