@@ -35,15 +35,15 @@ def readhash(filename)
   h
 end
 
-def save_blacklist(b, ip_address = nil)
+def save_blacklist(ip_address = nil)
   unless ip_address.nil?
-    b[ip_address] = Time.now.to_i
+    $blacklist[ip_address] = Time.now.to_i
 
-    `ufw insert 1 deny from #{ip_address}` unless b.key?(ip_address)
+    `ufw insert 1 deny from #{ip_address}` unless $existing.key?(ip_address)
   end
 
   f = File.open(BLACKLIST, 'w')
-  b.each do |ip_address, ts|
+  $blacklist.each do |ip_address, ts|
     f.puts "#{ip_address} #{ts}"
   end
   f.close
@@ -62,9 +62,69 @@ def existing
   h
 end
 
-w = readlist(WHITELIST)
-b = readhash(BLACKLIST)
-e = existing
+def command_update
+  missing = 0
+
+  puts 'Checking that ufw is up to date'
+  $blacklist.each do |ip_address, _|
+    next if $existing.key?(ip_address)
+
+    command_add(ip_address)
+    missing += 1
+  end
+  puts "There are #{$blacklist.size} banned addresses, #{missing} were missing"
+end
+
+def command_show
+  puts "Whitelist (#{WHITELIST})"
+  $whitelist.each do |ip_address|
+    puts "- #{ip_address}"
+  end
+  puts
+  puts "Blacklist (#{BLACKLIST})"
+  $blacklist.each do |ip_address, _|
+    puts "- #{ip_address}"
+  end
+  puts
+end
+
+def command_add(ip_address)
+  if $whitelist.include?(ip_address)
+    puts "#{ip_address} is in the whitelist"
+  elsif $blacklist.key?(ip_address)
+    puts "#{ip_address} is already blacklisted. Bumping timestamp"
+    save_blacklist(ip_address)
+  else
+    puts "#{ip_address} added to blacklist"
+    save_blacklist(ip_address)
+  end
+end
+
+def command_remove(ip_address)
+  found = false
+
+  if $blacklist.key?(ip_address)
+    $blacklist.delete(ip_address)
+    save_blacklist
+    found = true
+  end
+
+  if $existing.key?(ip_address)
+    number = $existing[ip_address]
+    `echo y | ufw delete #{number}`
+    found = true
+  end
+
+  if found
+    puts "#{ip_address} removed from blacklist"
+  else
+    puts "#{ip_address} is not in the blacklist"
+  end
+end
+
+$whitelist = readlist(WHITELIST)
+$blacklist = readhash(BLACKLIST)
+$existing = existing
 
 unless ARGV[0]
   puts 'No command given'
@@ -75,31 +135,10 @@ cmd = ARGV.shift.downcase
 
 case cmd
 when 'update'
-  missing = 0
-
-  puts 'Checking that ufw is up to date'
-  b.each do |ip_address, _|
-    next if e.key?(ip_address)
-
-    puts "-- #{ip_address} was missing"
-    missing += 1
-    `ufw insert 1 deny from #{ip_address}`
-  end
-  puts "There are #{b.size} banned addresses, #{missing} were missing"
+  command_update
 when 'show'
-  puts "Whitelist (#{WHITELIST})"
-  w.each do |ip_address|
-    puts "- #{ip_address}"
-  end
-  puts
-  puts "Blacklist (#{BLACKLIST})"
-  b.each do |ip_address, _|
-    puts "- #{ip_address}"
-  end
-  puts
+  command_show
 when 'add'
-  # It's an address to ban
-
   if ARGV[0].nil?
     puts 'No address given to ban'
     exit(1)
@@ -107,43 +146,16 @@ when 'add'
 
   ip_address = ARGV.shift
 
-  if w.include?(ip_address)
-    puts "#{ip_address} is in the whitelist"
-  elsif b.key?(ip_address)
-    puts "#{ip_address} is already blacklisted. Bumping timestamp"
-    save_blacklist(b, ip_address)
-  else
-    puts "#{ip_address} added to blacklist"
-    save_blacklist(b, ip_address)
-  end
+  command_add(ip_address)
 when 'remove'
-  # It's an address to unban
-
   if ARGV[0].nil?
     puts 'No address given to ban'
     exit(1)
   end
 
   ip_address = ARGV.shift
-  found = false
 
-  if b.key?(ip_address)
-    b.delete(ip_address)
-    save_blacklist(b)
-    found = true
-  end
-
-  if e.key?(ip_address)
-    number = e[ip_address]
-    `echo y | ufw delete #{number}`
-    found = true
-  end
-
-  if found
-    puts "#{ip_address} removed from blacklist"
-  else
-    puts "#{ip_address} is not in the blacklist"
-  end
+  command_remove(ip_address)
 else
   puts "Unknown command [#{cmd}]"
 end
