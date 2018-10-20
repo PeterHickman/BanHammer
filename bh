@@ -154,7 +154,7 @@ def command_import_ufw(filename)
     # ... and they must be inbound only
     next unless line.include?('OUT= ')
 
-    address = line.split(/\s+/).select { |x| x.index('SRC=').zero? }
+    address = line.split(/\s+/).select { |x| x.index('SRC=') == 0 }
 
     next unless address.any?
 
