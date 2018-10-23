@@ -80,3 +80,4 @@ I plan to implement a `purge X` command to purge blacklisted addresses that have
 1. Implement the purge command
 2. Display usage when no command is given
 3. Update should check if we are blocking whitelisted addresses
+4. Check and handle ip addresses, including netmasks
