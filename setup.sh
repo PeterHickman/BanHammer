@@ -4,7 +4,7 @@
 # whitelist from the DENY and ALLOW entries in the current
 # ufw configuration
 
-TS=`date "+%s"`
+TS=$(date "+%s")
 
 echo "Entries for the blacklist"
 ufw status | awk "/DENY/ { print \$NF \" \" $TS }" > blacklist
