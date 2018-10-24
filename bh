@@ -202,7 +202,7 @@ class UFW
     x.split("\n").each do |line|
       next unless line.include?('DENY IN')
 
-      line = line.gsub('[', '').gsub(']', '').strip
+      line = line.delete('[').delete(']').strip
       y = line.split(/\s+/)
       addresses[y.last] = y.first
     end
