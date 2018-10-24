@@ -2,67 +2,225 @@
 
 require 'fileutils'
 
+class Whitelist
+  def initialize(filename)
+    @filename = filename
+
+    @addresses = []
+
+    load
+  end
+
+  def include?(address)
+    @addresses.include?(address)
+  end
+
+  def each(&block)
+    @addresses.each(&block)
+  end
+
+  private
+
+  def load
+    path = File.dirname(@filename)
+
+    FileUtils.mkdir_p(path) unless File.directory?(path)
+
+    if File.exist?(@filename)
+      File.open(@filename, 'r').each do |line|
+        @addresses << line.chomp
+      end
+    else
+      FileUtils.touch(@filename)
+    end
+  end
+end
+
+class Blacklist
+  def initialize(filename)
+    @filename = filename
+
+    @addresses = {}
+    @changed = false
+
+    load
+  end
+
+  def []=(key, value)
+    return if key.nil?
+    @addresses[key] = value
+    @changed = true
+  end
+
+  def each(&block)
+    @addresses.each(&block)
+  end
+
+  def key?(key)
+    @addresses.key?(key)
+  end
+
+  def delete(key)
+    @addresses.delete(key)
+    @changed = true
+  end
+
+  def save
+    return unless @changed
+
+    f = File.open(@filename, 'w')
+    @addresses.each do |blacklisted_ip_address, ts|
+      f.puts "#{blacklisted_ip_address} #{ts}"
+    end
+    f.close
+
+    @changed = false
+  end
+
+  private
+
+  def load
+    path = File.dirname(@filename)
+
+    FileUtils.mkdir_p(path) unless File.directory?(path)
+
+    if File.exist?(@filename)
+      File.open(@filename, 'r').each do |line|
+        address, timestamp = line.chomp.split(/\s+/)
+        @addresses[address] = timestamp
+      end
+    else
+      FileUtils.touch(@filename)
+    end
+  end
+end
+
+class Existing
+  def initialize
+    @addresses = {}
+
+    load
+  end
+
+  def key?(key)
+    @addresses.key?(key)
+  end
+
+  def [](key)
+    @addresses[key]
+  end
+
+  def <<(key)
+    return if @addresses.key?(key)
+    UFW.add(key)
+    load
+  end
+
+  private
+
+  def load
+    @addresses = UFW.load
+  end
+end
+
+class ImportAuth
+  def self.import(filename)
+    ##
+    # Filter the auth.log file and find out who has been grinding
+    # at the ssh service and ban them. Only actually ban them when
+    # they hit > 100 attempts
+    ##
+
+    a = Hash.new(0)
+
+    File.open(filename, 'r').each do |line|
+      next unless line.include?('sshd[')
+
+      if line.include?('not allowed because none')
+        a[strip_address(line)] += 1
+      elsif line.include?(' Invalid user ')
+        a[strip_address(line)] += 1
+      end
+    end
+
+    addresses = []
+
+    a.each do |ip_address, count|
+      next if count < 100
+      next if ip_address.nil?
+      addresses << ip_address
+    end
+
+    addresses
+  end
+end
+
+class ImportUFW
+  def self.import(filename)
+    ##
+    # Filters the ufw.log file and gets a list of addresses that
+    # were blocked. If any of the addresses are already in the
+    # blacklist then their timestamp is bumped
+    ##
+
+    a = Hash.new(0)
+
+    File.open(filename, 'r').each do |line|
+      # We are only looking for addresses that ufw has blocked ...
+      next unless line.include?('UFW BLOCK')
+
+      # ... and they must be inbound only
+      next unless line.include?('OUT= ')
+
+      address = line.split(/\s+/).select { |x| x.index('SRC=') == 0 }
+
+      next unless address.any?
+
+      address = address.first.delete('SRC=')
+
+      a[address] += 1
+    end
+
+    a
+  end
+end
+
+class UFW
+  def self.delete(number)
+    `echo y | ufw delete #{number}`
+  end
+
+  def self.add(ip_address)
+    `ufw insert 1 deny from #{ip_address}`
+  end
+
+  def self.load
+    addresses = {}
+
+    x = `ufw status numbered`
+
+    x.split("\n").each do |line|
+      next unless line.include?('DENY IN')
+
+      line = line.gsub('[', '').gsub(']', '').strip
+      y = line.split(/\s+/)
+      addresses[y.last] = y.first
+    end
+
+    addresses
+  end
+end
+
 WHITELIST = '/etc/ban_hammer/whitelist'.freeze
 BLACKLIST = '/etc/ban_hammer/blacklist'.freeze
 
 RE_IP_ADDRESS = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
 RE_FROM = / from ([^ ]+)\s+/
 
-def readlist(filename)
-  path = File.dirname(filename)
-
-  FileUtils.mkdir_p(path) unless File.directory?(path)
-
-  l = []
-
-  if File.exist?(filename)
-    File.open(filename, 'r').each do |line|
-      l << line.chomp
-    end
-  else
-    FileUtils.touch(filename)
-  end
-
-  l
-end
-
-def readhash(filename)
-  x = readlist(filename)
-
-  h = {}
-  x.each do |line|
-    y = line.split(/\s+/)
-    h[y.first] = y.last
-  end
-
-  h
-end
-
 def save_blacklist(ip_address = nil)
-  unless ip_address.nil?
-    $blacklist[ip_address] = Time.now.to_i
-
-    `ufw insert 1 deny from #{ip_address}` unless $existing.key?(ip_address)
-  end
-
-  f = File.open(BLACKLIST, 'w')
-  $blacklist.each do |blacklisted_ip_address, ts|
-    f.puts "#{blacklisted_ip_address} #{ts}"
-  end
-  f.close
-end
-
-def existing
-  x = `ufw status numbered`
-  h = {}
-  x.split("\n").each do |line|
-    next unless line.include?('DENY IN')
-
-    line = line.delete('[').delete(']').strip
-    y = line.split(/\s+/)
-    h[y.last] = y.first
-  end
-  h
+  $existing << ip_address
+  $blacklist[ip_address] = Time.now.to_i
+  $blacklist.save
 end
 
 def strip_address(line)
@@ -150,10 +308,10 @@ def command_remove(ip_address)
 
   if $existing.key?(ip_address)
     number = $existing[ip_address]
-    `echo y | ufw delete #{number}`
+    UFW.delete(number)
     found = true
   end
-
+  
   if found
     puts "#{ip_address} removed from blacklist"
   else
@@ -162,31 +320,9 @@ def command_remove(ip_address)
 end
 
 def command_import_ufw(filename)
-  ##
-  # Filters the ufw.log file and gets a list of addresses that
-  # were blocked. If any of the addresses are already in the
-  # blacklist then their timestamp is bumped
-  ##
-
   puts "Scanning ufw.log #{filename} for repeat offenders"
 
-  a = Hash.new(0)
-
-  File.open(filename, 'r').each do |line|
-    # We are only looking for addresses that ufw has blocked ...
-    next unless line.include?('UFW BLOCK')
-
-    # ... and they must be inbound only
-    next unless line.include?('OUT= ')
-
-    address = line.split(/\s+/).select { |x| x.index('SRC=') == 0 }
-
-    next unless address.any?
-
-    address = address.first.delete('SRC=')
-
-    a[address] += 1
-  end
+  a = ImportUFW.import(filename)
 
   a.each do |address, _|
     next unless $blacklist.key?(address)
@@ -196,36 +332,18 @@ def command_import_ufw(filename)
 end
 
 def command_import_auth(filename)
-  ##
-  # Filter the auth.log file and find out who has been grinding
-  # at the ssh service and ban them. Only actually ban them when
-  # they hit > 100 attempts
-  ##
-
   puts "Filtering auth.log #{filename} for addresses to ban"
 
-  a = Hash.new(0)
-
-  File.open(filename, 'r').each do |line|
-    next unless line.include?('sshd[')
-
-    if line.include?('not allowed because none')
-      a[strip_address(line)] += 1
-    elsif line.include?(' Invalid user ')
-      a[strip_address(line)] += 1
-    end
-  end
+  a = ImportAuth.import(filename)
 
   a.each do |ip_address, count|
-    next if count < 100
-    next if ip_address.nil?
     command_add(ip_address)
   end
 end
 
-$whitelist = readlist(WHITELIST)
-$blacklist = readhash(BLACKLIST)
-$existing = existing
+$whitelist = Whitelist.new(WHITELIST)
+$blacklist = Blacklist.new(BLACKLIST)
+$existing = Existing.new
 
 unless ARGV[0]
   puts 'No command given'
