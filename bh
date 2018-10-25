@@ -69,8 +69,8 @@ class Blacklist
     return unless @changed
 
     f = File.open(@filename, 'w')
-    @addresses.each do |blacklisted_ip_address, ts|
-      f.puts "#{blacklisted_ip_address} #{ts}"
+    @addresses.each do |ip_address, ts|
+      f.puts "#{ip_address} #{ts}"
     end
     f.close
 
@@ -86,8 +86,8 @@ class Blacklist
 
     if File.exist?(@filename)
       File.open(@filename, 'r').each do |line|
-        address, timestamp = line.chomp.split(/\s+/)
-        @addresses[address] = timestamp
+        ip_address, timestamp = line.chomp.split(/\s+/)
+        @addresses[ip_address] = timestamp
       end
     else
       FileUtils.touch(@filename)
@@ -225,14 +225,12 @@ def save_blacklist(ip_address = nil)
 end
 
 def strip_address(line)
-  begin
-    m = RE_FROM.match(line)
-    ip_address = m[1]
-    return nil unless ip_address =~ RE_IP_ADDRESS
-    return ip_address
-  rescue
-    return nil
-  end
+  m = RE_FROM.match(line)
+  ip_address = m[1]
+  return nil unless ip_address =~ RE_IP_ADDRESS
+  return ip_address
+rescue
+  return nil
 end
 
 def get_address(error_message)
@@ -312,7 +310,7 @@ def command_remove(ip_address)
     UFW.delete(number)
     found = true
   end
-  
+
   if found
     puts "#{ip_address} removed from blacklist"
   else
@@ -337,7 +335,7 @@ def command_import_auth(filename)
 
   a = ImportAuth.import(filename)
 
-  a.each do |ip_address, count|
+  a.each do |ip_address|
     command_add(ip_address)
   end
 end

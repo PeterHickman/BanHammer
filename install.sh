@@ -4,15 +4,15 @@ WHITELIST='/etc/ban_hammer/whitelist'
 BLACKLIST='/etc/ban_hammer/blacklist'
 
 create_blank() {
-  if [ -r $1 ]; then
+  if [ -r "$1" ]; then
     echo "File $1 already exists"
   else
     echo "Creating blank file: $1"
-    touch $1
+    touch "$1"
   fi
 }
 
-if ! [ $(id -u) = 0 ]; then
+if ! [ "$(id -u)" = 0 ]; then
   echo 'You must be root to do this.' 1>&2
   exit 1
 fi
