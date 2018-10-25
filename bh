@@ -65,6 +65,10 @@ class Blacklist
     @changed = true
   end
 
+  def size
+    @addresses.size
+  end
+
   def save
     return unless @changed
 
