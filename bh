@@ -46,9 +46,9 @@ class Blacklist
     load
   end
 
-  def []=(key, value)
+  def <<(key)
     return if key.nil?
-    @addresses[key] = value
+    @addresses[key] = Time.now.to_i
     @changed = true
   end
 
@@ -220,7 +220,7 @@ RE_FROM = / from ([^ ]+)\s+/
 
 def save_blacklist(ip_address = nil)
   $existing << ip_address
-  $blacklist[ip_address] = Time.now.to_i
+  $blacklist << ip_address
   $blacklist.save
 end
 
