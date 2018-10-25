@@ -262,6 +262,36 @@ def get_filename(error_message)
   filename
 end
 
+def usage(message = nil)
+  name = File.basename($0)
+
+  if message
+    puts "#{name}: #{message}"
+    puts
+  end
+
+  puts <<-eos
+#{name} add X.X.X.X
+    adds X.X.X.X to the blacklist and ufw
+
+#{name} remove X.X.X.X
+    removed X.X.X.X from the blacklist and ufw
+
+#{name} show
+    shows the current blacklist and whitelist
+
+#{name} update
+    make sure that ufw contains all addresses from the blacklist
+
+#{name} import auth /var/log/auth
+    parse an auth file and ban all addresses that are grinding ssh
+
+#{name} import ufw /var/log/ufw
+    bump the timestamp of any addresses that persist trying to connect
+
+eos
+end
+
 def command_update
   missing = 0
 
@@ -344,14 +374,14 @@ def command_import_auth(filename)
   end
 end
 
+unless ARGV[0]
+  usage('No command given')
+  exit(1)
+end
+
 $whitelist = Whitelist.new(WHITELIST)
 $blacklist = Blacklist.new(BLACKLIST)
 $existing = Existing.new
-
-unless ARGV[0]
-  puts 'No command given'
-  exit(1)
-end
 
 cmd = ARGV.shift.downcase
 
@@ -387,5 +417,5 @@ when 'import'
     puts "Unrecognised subcommand [#{sub_command}] for 'import'"
   end
 else
-  puts "Unknown command [#{cmd}]"
+  usage("Unknown command [#{cmd}]")
 end
