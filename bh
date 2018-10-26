@@ -359,7 +359,7 @@ def command_import_ufw(filename)
 
   a.each do |address, _|
     next unless $blacklist.key?(address)
-    $blacklist[address] = Time.now.to_i
+    $blacklist << address
     puts "#{address} found. Bumping timestamp"
   end
 end
