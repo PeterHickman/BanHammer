@@ -77,7 +77,6 @@ I plan to implement a `purge X` command to purge blacklisted addresses that have
 
 ## To Do
 
-1. Implement the purge command
-2. Display usage when no command is given
-3. Update should check if we are blocking whitelisted addresses
-4. Check and handle ip addresses, including netmasks
+0. Implement the purge command
+0. Update should check if we are blocking whitelisted addresses
+0. Check and handle ip addresses, including netmasks
