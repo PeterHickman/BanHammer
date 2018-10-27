@@ -220,6 +220,8 @@ class UFW
   end
 end
 
+DAY = 86400 # Number of seconds in a day
+
 WHITELIST = '/etc/ban_hammer/whitelist'.freeze
 BLACKLIST = '/etc/ban_hammer/blacklist'.freeze
 
@@ -266,6 +268,27 @@ def get_filename(error_message)
   filename
 end
 
+def get_days(error_message)
+  if ARGV[0].nil?
+    puts error_message
+    exit(1)
+  end
+
+  days = ARGV.shift
+
+  unless days =~ /^\d+$/
+    puts error_message
+    exit(1)
+  end
+
+  if days == '0'
+    puts error_message
+    exit(1)
+  end
+
+  days
+end
+
 def usage(message = nil)
   name = File.basename($0)
 
@@ -292,6 +315,9 @@ def usage(message = nil)
 
 #{name} import ufw /var/log/ufw
     bump the timestamp of any addresses that persist trying to connect
+
+#{name} purge X
+    purge all blacklisted addresses that have been inactive for X days
 
 eos
 end
@@ -384,6 +410,22 @@ def command_import_auth(filename)
   end
 end
 
+def command_purge(days)
+  s = days.to_i * DAY
+  cut_off = Time.now.to_i - s
+
+  puts "Purging blacklist if address inactive for #{days} days"
+  count = 0
+
+  $blacklist.each do |ip_address, ts|
+    next if ts.to_i > cut_off
+    command_remove(ip_address)
+    count += 1
+  end
+
+  puts "#{count} removed. Blacklist has #{$blacklist.size} entries"
+end
+
 unless ARGV[0]
   usage('No command given')
   exit(1)
@@ -426,6 +468,10 @@ when 'import'
   else
     puts "Unrecognised subcommand [#{sub_command}] for 'import'"
   end
+when 'purge'
+  days = get_days('Enter the number of days to purge > 0')
+
+  command_purge(days)
 else
   usage("Unknown command [#{cmd}]")
 end

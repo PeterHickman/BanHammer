@@ -67,17 +67,43 @@ Filters the ufw.log file and gets a list of addresses that were blocked. If any 
 
 Filter the auth.log file and find out who has been grinding at the ssh service and ban them. Only actually ban them when they hit > 100 attempts
 
+### `purge X`
+
+	Purging blacklist if address inactive for X days
+	1.1.1.1 removed from blacklist
+	1 removed. Blacklist has 173 entries
+
+Purge the blacklist of addresses if they have been inactive for `X` days
+
 ## Using it
 
 The initial population of the blacklist can come from the `import auth /var/log/auth.log` command followed, perhaps, with a daily cron task to keep it up to date. Similary a cron to run `import ufw /var/log/ufw.log` will make sure that we are keeping up to date with the repeat offenders
 
 Another good source of miscreants are the various web server logs. However this is more site specific so I have no general script to offer at this point that won't generate false positives
 
-Each time an address is banned it's timestamp is incremented so addresses with older timestamps have either been cleaned up, gone offline or given up and can be removed from the blacklist. Otherwise it would simply get too damn big
+Each time an address is banned it's timestamp is incremented so addresses with older timestamps have either been cleaned up, gone offline or given up and can be removed from the blacklist. Otherwise it would simply get too damn big. The purge command will clean these up
 
-I plan to implement a `purge X` command to purge blacklisted addresses that haven't been seen in `X` days
+I have the following crons
+
+### `/etc/cron.daily/banhammer`
+
+	#!/bin/sh -e
+	# Check to see who is still at it after being banned
+	/usr/local/sbin/bh import ufw /var/log/ufw.log
+
+### `/etc/cron.hourly/banhammer`
+
+	#!/bin/sh -e
+	# See who is grinding on ssh
+	/usr/local/sbin/bh import auth /var/log/auth.log
+
+### `/etc/cron.weekly/banhammer`
+
+	#!/bin/sh -e
+	# Purge addresses that have taken the hint
+	/usr/local/sbin/bh purge 28
 
 ## To Do
 
-0. Implement the purge command
 0. Check and handle ip addresses, including netmasks
+0. Perhaps the crons should be installed by setup?
