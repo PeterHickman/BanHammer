@@ -1,0 +1,3 @@
+#!/bin/sh -e
+# See who is grinding on ssh
+/usr/local/sbin/bh import auth /var/log/auth.log

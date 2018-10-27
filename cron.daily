@@ -1,0 +1,3 @@
+#!/bin/sh -e
+# Check to see who is still at it after being banned
+/usr/local/sbin/bh import ufw /var/log/ufw.log

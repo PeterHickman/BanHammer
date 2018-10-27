@@ -30,6 +30,11 @@ fi
 create_blank $WHITELIST
 create_blank $BLACKLIST
 
+echo 'Installing crons'
+install -g root -o root -m 0755 cron.daily  /etc/cron.daily/banhammer
+install -g root -o root -m 0755 cron.hourly /etc/cron.hourly/banhammer
+install -g root -o root -m 0755 cron.weekly /etc/cron.weekly/banhammer
+
 echo
 echo "Make sure that you populate $WHITELIST"
 echo "with a list of the addresses you never"

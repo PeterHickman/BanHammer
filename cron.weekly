@@ -1,0 +1,3 @@
+#!/bin/sh -e
+# Purge addresses that have taken the hint
+/usr/local/sbin/bh purge 28
