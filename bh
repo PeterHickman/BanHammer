@@ -220,7 +220,7 @@ class UFW
   end
 end
 
-DAY = 86400 # Number of seconds in a day
+DAY = 86_400 # Number of seconds in a day
 
 WHITELIST = '/etc/ban_hammer/whitelist'.freeze
 BLACKLIST = '/etc/ban_hammer/blacklist'.freeze
@@ -290,7 +290,7 @@ def get_days(error_message)
 end
 
 def usage(message = nil)
-  name = File.basename($0)
+  name = File.basename($PROGRAM_NAME)
 
   if message
     puts "#{name}: #{message}"
