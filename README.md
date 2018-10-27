@@ -83,7 +83,7 @@ Another good source of miscreants are the various web server logs. However this 
 
 Each time an address is banned it's timestamp is incremented so addresses with older timestamps have either been cleaned up, gone offline or given up and can be removed from the blacklist. Otherwise it would simply get too damn big. The purge command will clean these up
 
-These are the following crons the install script will install for you
+These are the crons the install script will install for you
 
 ### `/etc/cron.daily/banhammer`
 
