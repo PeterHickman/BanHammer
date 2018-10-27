@@ -77,13 +77,13 @@ Purge the blacklist of addresses if they have been inactive for `X` days
 
 ## Using it
 
-The initial population of the blacklist can come from the `bh import auth /var/log/auth.log` command followed, perhaps, with a daily cron task to keep it up to date. Similary a cron to run `import ufw /var/log/ufw.log` will make sure that we are keeping up to date with the repeat offenders
+The initial population of the blacklist can come from the `bh import auth /var/log/auth.log` command followed with a daily cron task to keep it up to date. Similarly a cron to run `bh import ufw /var/log/ufw.log` will make sure that we are keeping up to date with the repeat offenders
 
 Another good source of miscreants are the various web server logs. However this is more site specific so I have no general script to offer at this point that won't generate false positives
 
 Each time an address is banned it's timestamp is incremented so addresses with older timestamps have either been cleaned up, gone offline or given up and can be removed from the blacklist. Otherwise it would simply get too damn big. The purge command will clean these up
 
-I have the following crons which the install script will install for you
+These are the following crons the install script will install for you
 
 ### `/etc/cron.daily/banhammer`
 
