@@ -19,6 +19,10 @@ class Whitelist
     @addresses.each(&block)
   end
 
+  def key?(key)
+    @addresses.include?(key)
+  end
+
   private
 
   def load
@@ -297,6 +301,12 @@ def command_update
 
   puts 'Checking that ufw is up to date'
   $blacklist.each do |ip_address, _|
+    if $whitelist.key?(ip_address)
+      puts "#{ip_address} found in whitelist, should not be blacklisted"
+      command_remove(ip_address)
+      next
+    end
+
     next if $existing.key?(ip_address)
 
     command_add(ip_address)

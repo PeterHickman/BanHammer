@@ -33,12 +33,14 @@ Shows the whitelisted addresses and the blacklisted addresses
 
 	# bh update
 	Checking that ufw is up to date
-	-- 187.141.143.180 was missing
-	-- 106.38.59.5 was missing
-	-- 172.81.224.196 was missing
+	187.141.143.180 is already blacklisted. Bumping timestamp
+	106.38.59.5 is already blacklisted. Bumping timestamp
+	39.104.49.172 found in whitelist, should not be blacklisted
+	39.104.49.172 removed from blacklist
+	172.81.224.196 is already blacklisted. Bumping timestamp
 	There are 714 banned addresses, 3 were missing
 
-Goes over the blacklist and makes sure that all the addresses are being blocked by `ufw`
+Goes over the blacklist and makes sure that all the addresses are being blocked by `ufw`. If it finds any addresses that are blacklisted but are also in the whitelist it will remove them
 
 ### `add X.X.X.X`
 
@@ -78,5 +80,4 @@ I plan to implement a `purge X` command to purge blacklisted addresses that have
 ## To Do
 
 0. Implement the purge command
-0. Update should check if we are blocking whitelisted addresses
 0. Check and handle ip addresses, including netmasks
