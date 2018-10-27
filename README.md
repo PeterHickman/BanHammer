@@ -77,7 +77,7 @@ Purge the blacklist of addresses if they have been inactive for `X` days
 
 ## Using it
 
-The initial population of the blacklist can come from the `import auth /var/log/auth.log` command followed, perhaps, with a daily cron task to keep it up to date. Similary a cron to run `import ufw /var/log/ufw.log` will make sure that we are keeping up to date with the repeat offenders
+The initial population of the blacklist can come from the `bh import auth /var/log/auth.log` command followed, perhaps, with a daily cron task to keep it up to date. Similary a cron to run `import ufw /var/log/ufw.log` will make sure that we are keeping up to date with the repeat offenders
 
 Another good source of miscreants are the various web server logs. However this is more site specific so I have no general script to offer at this point that won't generate false positives
 
@@ -106,4 +106,4 @@ I have the following crons which the install script will install for you
 ## To Do
 
 0. Check and handle ip addresses, including netmasks
-0. Perhaps the crons should be installed by setup?
+0. Should we be logging stuff?
