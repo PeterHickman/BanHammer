@@ -40,7 +40,7 @@ create_cron cron.hourly
 create_cron cron.weekly
 
 echo "Install the logrotate file"
-install -g roo t-o root -m 0644 logrotate /etc/logrotate.d
+install -g root -o root -m 0644 logrotate /etc/logrotate.d/ban_hammer
 
 echo
 echo "Make sure that you populate $WHITELIST"

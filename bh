@@ -344,14 +344,14 @@ def command_update
 end
 
 def command_show
-  log "Whitelist (#{WHITELIST})"
+  puts "Whitelist (#{WHITELIST})"
   $whitelist.each do |ip_address|
-    log "- #{ip_address}"
+    puts "- #{ip_address}"
   end
   puts
-  log "Blacklist (#{BLACKLIST})"
+  puts "Blacklist (#{BLACKLIST})"
   $blacklist.each do |ip_address, _|
-    log "- #{ip_address}"
+    puts "- #{ip_address}"
   end
   puts
 end
@@ -443,7 +443,7 @@ end
 $whitelist = Whitelist.new(WHITELIST)
 $blacklist = Blacklist.new(BLACKLIST)
 $existing = Existing.new
-$logger = File.open(LOGFILE, 'wa')
+$logger = File.open(LOGFILE, 'a')
 
 cmd = ARGV.shift.downcase
 
