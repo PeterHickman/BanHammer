@@ -1,5 +1,10 @@
 #!/bin/sh
 
+if ! [ "$(id -u)" = 0 ]; then
+  echo 'You must be root to do this.' 1>&2
+  exit 1
+fi
+
 WHITELIST='/etc/ban_hammer/whitelist'
 BLACKLIST='/etc/ban_hammer/blacklist'
 
@@ -12,15 +17,10 @@ create_blank() {
   fi
 }
 
-create_cron() {
+install_cron() {
   echo "Installing cron into $1"
-  install -g root -o root -m 0755 $1  /etc/$1/banhammer
+  install -g root -o root -m 0755 $1 /etc/$1/banhammer
 }
-
-if ! [ "$(id -u)" = 0 ]; then
-  echo 'You must be root to do this.' 1>&2
-  exit 1
-fi
 
 echo 'Installing Ban Hammer for ufw to /usr/local/sbin/'
 install -g root -o root -m 0700 bh /usr/local/sbin/
@@ -35,9 +35,9 @@ fi
 create_blank $WHITELIST
 create_blank $BLACKLIST
 
-create_cron cron.daily
-create_cron cron.hourly
-create_cron cron.weekly
+install_cron cron.daily
+install_cron cron.hourly
+install_cron cron.weekly
 
 echo "Install the logrotate file"
 install -g root -o root -m 0644 logrotate /etc/logrotate.d/ban_hammer
