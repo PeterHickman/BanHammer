@@ -225,6 +225,8 @@ DAY = 86_400 # Number of seconds in a day
 WHITELIST = '/etc/ban_hammer/whitelist'.freeze
 BLACKLIST = '/etc/ban_hammer/blacklist'.freeze
 
+LOGFILE = '/var/log/ban_hammer.log'.freeze
+
 RE_IP_ADDRESS = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
 RE_FROM = / from ([^ ]+)\s+/
 
@@ -325,10 +327,10 @@ end
 def command_update
   missing = 0
 
-  puts 'Checking that ufw is up to date'
+  log 'Checking that ufw is up to date'
   $blacklist.each do |ip_address, _|
     if $whitelist.key?(ip_address)
-      puts "#{ip_address} found in whitelist, should not be blacklisted"
+      log "#{ip_address} found in whitelist, should not be blacklisted"
       command_remove(ip_address)
       next
     end
@@ -338,30 +340,30 @@ def command_update
     command_add(ip_address)
     missing += 1
   end
-  puts "There are #{$blacklist.size} banned addresses, #{missing} were missing"
+  log "There are #{$blacklist.size} banned addresses, #{missing} were missing"
 end
 
 def command_show
-  puts "Whitelist (#{WHITELIST})"
+  log "Whitelist (#{WHITELIST})"
   $whitelist.each do |ip_address|
-    puts "- #{ip_address}"
+    log "- #{ip_address}"
   end
   puts
-  puts "Blacklist (#{BLACKLIST})"
+  log "Blacklist (#{BLACKLIST})"
   $blacklist.each do |ip_address, _|
-    puts "- #{ip_address}"
+    log "- #{ip_address}"
   end
   puts
 end
 
 def command_add(ip_address)
   if $whitelist.include?(ip_address)
-    puts "#{ip_address} is in the whitelist"
+    log "#{ip_address} is in the whitelist"
   elsif $blacklist.key?(ip_address)
-    puts "#{ip_address} is already blacklisted. Bumping timestamp"
+    log "#{ip_address} is already blacklisted. Bumping timestamp"
     save_blacklist(ip_address)
   else
-    puts "#{ip_address} added to blacklist"
+    log "#{ip_address} added to blacklist"
     save_blacklist(ip_address)
   end
 end
@@ -382,26 +384,26 @@ def command_remove(ip_address)
   end
 
   if found
-    puts "#{ip_address} removed from blacklist"
+    log "#{ip_address} removed from blacklist"
   else
-    puts "#{ip_address} is not in the blacklist"
+    log "#{ip_address} is not in the blacklist"
   end
 end
 
 def command_import_ufw(filename)
-  puts "Scanning ufw.log #{filename} for repeat offenders"
+  log "Scanning ufw.log #{filename} for repeat offenders"
 
   a = ImportUFW.import(filename)
 
   a.each do |address, _|
     next unless $blacklist.key?(address)
     $blacklist << address
-    puts "#{address} found. Bumping timestamp"
+    log "#{address} found. Bumping timestamp"
   end
 end
 
 def command_import_auth(filename)
-  puts "Filtering auth.log #{filename} for addresses to ban"
+  log "Filtering auth.log #{filename} for addresses to ban"
 
   a = ImportAuth.import(filename)
 
@@ -414,7 +416,7 @@ def command_purge(days)
   s = days.to_i * DAY
   cut_off = Time.now.to_i - s
 
-  puts "Purging blacklist if address inactive for #{days} days"
+  log "Purging blacklist if address inactive for #{days} days"
   count = 0
 
   $blacklist.each do |ip_address, ts|
@@ -423,7 +425,14 @@ def command_purge(days)
     count += 1
   end
 
-  puts "#{count} removed. Blacklist has #{$blacklist.size} entries"
+  log "#{count} removed. Blacklist has #{$blacklist.size} entries"
+end
+
+def log(message)
+  ts = Time.now.strftime('%Y-%m-%d %H:%M:%S.%N')
+  $logger.puts "#{ts} : #{message}"
+
+  puts message
 end
 
 unless ARGV[0]
@@ -434,6 +443,7 @@ end
 $whitelist = Whitelist.new(WHITELIST)
 $blacklist = Blacklist.new(BLACKLIST)
 $existing = Existing.new
+$logger = File.open(LOGFILE, 'wa')
 
 cmd = ARGV.shift.downcase
 

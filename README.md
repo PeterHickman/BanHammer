@@ -83,27 +83,8 @@ Another good source of miscreants are the various web server logs. However this 
 
 Each time an address is banned it's timestamp is incremented so addresses with older timestamps have either been cleaned up, gone offline or given up and can be removed from the blacklist. Otherwise it would simply get too damn big. The purge command will clean these up
 
-These are the crons the install script will install for you
-
-### `/etc/cron.daily/banhammer`
-
-	#!/bin/sh -e
-	# Check to see who is still at it after being banned
-	/usr/local/sbin/bh import ufw /var/log/ufw.log
-
-### `/etc/cron.hourly/banhammer`
-
-	#!/bin/sh -e
-	# See who is grinding on ssh
-	/usr/local/sbin/bh import auth /var/log/auth.log
-
-### `/etc/cron.weekly/banhammer`
-
-	#!/bin/sh -e
-	# Purge addresses that have taken the hint
-	/usr/local/sbin/bh purge 28
+These are the crons the install script will install for you. Any action take is logged to /var/log/ban_hammer.log and these is a logrotate for it (stolen shamelessly from ufw)
 
 ## To Do
 
 0. Check and handle ip addresses, including netmasks
-0. Should we be logging stuff?
