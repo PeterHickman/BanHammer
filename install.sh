@@ -12,6 +12,11 @@ create_blank() {
   fi
 }
 
+create_cron() {
+  echo "Installing cron into $1"
+  install -g root -o root -m 0755 $1  /etc/$1/banhammer
+}
+
 if ! [ "$(id -u)" = 0 ]; then
   echo 'You must be root to do this.' 1>&2
   exit 1
@@ -30,10 +35,9 @@ fi
 create_blank $WHITELIST
 create_blank $BLACKLIST
 
-echo 'Installing crons'
-install -g root -o root -m 0755 cron.daily  /etc/cron.daily/banhammer
-install -g root -o root -m 0755 cron.hourly /etc/cron.hourly/banhammer
-install -g root -o root -m 0755 cron.weekly /etc/cron.weekly/banhammer
+create_cron cron.daily
+create_cron cron.hourly
+create_cron cron.weekly
 
 echo
 echo "Make sure that you populate $WHITELIST"

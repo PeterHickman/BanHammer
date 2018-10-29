@@ -14,7 +14,7 @@
 
 SKIP = [
   ' / HTTP/',
-  ' /robots.txt',
+  ' /robots.txt ',
   ' /sitemap.xml ',
   ' /.well-known/security.txt ',
   ' /favicon.ico ',
@@ -27,6 +27,12 @@ SKIP = [
 removed = 0
 
 ARGF.each do |line|
+  ##
+  # This is probably the status code (it could be the respose
+  # size though) so we will skip these are a precaution
+  ##
+  next if line.include?(' 200 ')
+
   ok = true
 
   SKIP.each do |pattern|
