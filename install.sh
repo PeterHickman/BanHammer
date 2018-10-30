@@ -19,7 +19,7 @@ create_blank() {
 
 install_cron() {
   echo "Installing cron into $1"
-  install -g root -o root -m 0755 $1 /etc/$1/banhammer
+  install -g root -o root -m 0755 "$1" "/etc/$1/banhammer"
 }
 
 echo 'Installing Ban Hammer for ufw to /usr/local/sbin/'
