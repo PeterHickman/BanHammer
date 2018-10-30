@@ -30,7 +30,7 @@ if [ -d '/etc/ban_hammer' ]; then
 else
   echo 'Creating directory in /etc'
   mkdir -p /etc/ban_hammer
-fi	
+fi
 
 create_blank $WHITELIST
 create_blank $BLACKLIST
