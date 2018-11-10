@@ -83,7 +83,7 @@ Another good source of miscreants are the various web server logs. However this 
 
 Each time an address is banned it's timestamp is incremented so addresses with older timestamps have either been cleaned up, gone offline or given up and can be removed from the blacklist. Otherwise it would simply get too damn big. The purge command will clean these up
 
-These crons are installed for you. Any action take is logged to `/var/log/ban_hammer.log` and these is a logrotate for it too (stolen shamelessly from ufw)
+These crons are installed for you. Any action take is logged to `/var/log/ban_hammer.log` and there is a logrotate for it too (stolen shamelessly from ufw)
 
 ## To Do
 
