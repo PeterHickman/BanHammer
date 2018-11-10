@@ -32,6 +32,8 @@ class Whitelist
 
     if File.exist?(@filename)
       File.open(@filename, 'r').each do |line|
+        line = line.chomp.gsub(/#.*/, '').strip
+        next if line == ''
         @addresses << line.chomp
       end
     else
