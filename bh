@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'fileutils'
+require 'ipaddr'
 
 class Whitelist
   def initialize(filename)
@@ -9,10 +10,6 @@ class Whitelist
     @addresses = []
 
     load
-  end
-
-  def include?(address)
-    @addresses.include?(address)
   end
 
   def each(&block)
@@ -359,7 +356,7 @@ def command_show
 end
 
 def command_add(ip_address)
-  if $whitelist.include?(ip_address)
+  if $whitelist.key?(ip_address)
     log "#{ip_address} is in the whitelist"
   elsif $blacklist.key?(ip_address)
     log "#{ip_address} is already blacklisted. Bumping timestamp"
