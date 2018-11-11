@@ -2,13 +2,15 @@
 
 We use `ufw` to manage `iptables` on a few of our servers. Whilst it does a good job we use it so occasionally that the syntax is just as obscure as `iptables` itself. So this little wrapper allows us to manage banning the naughty ip addresses
 
+This handles only ipv4 addresses in the format `1.1.1.1` or `1.1.1.1/24`. This might result in some oddities when using addresses / ranges that overlap other addresses / ranges. This system will not try and resolve or simplify them. Anywhere we talk about an address we also accept ranges
+
 Requires Ruby >= 1.9.3 and, of course, `ufw`
 
 ## Install
 
 Run the `install.sh` script and `bh` will be installed to `/usr/local/sbin` and create `/etc/ban_hammer` containing two configuration files
 
-* `whitelist` This contains the list of addresses to never ban. All addresses to be banned will be compared to this list and will not be banned if they are listed here. Note that the addresses must be one per line, single addresses (such as `X.X.X.X`) and not ranges. Comments, starting with `#`, and blank lines will be skipped. This file needs to be manually edited
+* `whitelist` This contains the list of addresses to never ban. All addresses to be banned will be compared to this list and will not be banned if they are listed here. Note that the addresses / ranges must be one per line. Comments, starting with `#`, and blank lines will be skipped. This file needs to be manually edited
 * `blacklist` This will be populated by the `bh` script with the addresses to be banned along with the date they were banned or reported. This file is maintained via the `bh` command
 
 ## Usage
@@ -84,7 +86,3 @@ Another good source of miscreants are the various web server logs. However this 
 Each time an address is banned it's timestamp is incremented so addresses with older timestamps have either been cleaned up, gone offline or given up and can be removed from the blacklist. Otherwise it would simply get too damn big. The purge command will clean these up
 
 These crons are installed for you. Any action take is logged to `/var/log/ban_hammer.log` and there is a logrotate for it too (stolen shamelessly from ufw)
-
-## To Do
-
-0. Check and handle ip addresses, including netmasks
