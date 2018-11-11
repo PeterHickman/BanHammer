@@ -458,7 +458,7 @@ end
 
 def log(message)
   ts = Time.now.strftime('%Y-%m-%d %H:%M:%S.%N')
-  $logger.puts "#{ts} : #{message}"
+  $logger.puts "%s #%d: %s" % [ts, Process.pid, message]
 
   puts message
 end
