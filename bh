@@ -10,8 +10,12 @@ class Addresslist
     new_address = IPAddr.new(match)
 
     list.each do |existing|
-      w = IPAddr.new(existing)
-      return true if w.include?(new_address)
+      begin
+        w = IPAddr.new(existing)
+        return true if w.include?(new_address)
+      rescue => e
+        puts "ERROR: #{new_address} in #{existing} #{e}"
+      end
     end
 
     false
@@ -21,8 +25,12 @@ class Addresslist
     new_address = IPAddr.new(match)
 
     list.each do |existing|
-      w = IPAddr.new(existing)
-      return existing if w.include?(new_address)
+      begin
+        w = IPAddr.new(existing)
+        return existing if w.include?(new_address)
+      rescue => e
+        puts "ERROR: #{new_address} in #{existing} #{e}"
+      end
     end
 
     match
@@ -77,7 +85,7 @@ class Blacklist < Addresslist
 
   def <<(key)
     return if key.nil?
-    real = find_entry(@addresses, key)
+    real = find_entry(@addresses.keys, key)
 
     @addresses[real] = Time.now.to_i
     @changed = true
@@ -88,7 +96,7 @@ class Blacklist < Addresslist
   end
 
   def key?(key)
-    in_list?(@addresses, key)
+    in_list?(@addresses.keys, key)
   end
 
   def delete(key)
