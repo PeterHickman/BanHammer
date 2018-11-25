@@ -458,6 +458,11 @@ def command_purge(days)
   $blacklist.each do |ip_address, ts|
     next if ts.to_i > cut_off
     command_remove(ip_address)
+    ##
+    # Reload existing as the numbering will change. Oh this
+    # was a big issue. Believe me :(
+    ##
+    $existing = Existing.new
     count += 1
   end
 
