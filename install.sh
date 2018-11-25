@@ -24,6 +24,18 @@ create_blank() {
   fi
 }
 
+populate_whitelist() {
+  COUNT=`ifconfig | grep -c 'inet addr:'`
+
+  echo '# Make sure we dont ban ourselves, that would be silly' >> /etc/ban_hammer/whitelist
+
+  if [ "$COUNT" = "0" ]; then 
+    ifconfig | awk '/inet / { split($0, a, " "); split(a[2], b, " "); print b[1] }' >> /etc/ban_hammer/whitelist
+  else 
+    ifconfig | awk '/inet add/ { split($0, a, ":"); split(a[2], b, " "); print b[1] }' >> /etc/ban_hammer/whitelist
+  fi
+}
+
 install_cron() {
   echo "Installing cron into $1"
   install -g $ROOT -o $ROOT -m 0755 "$1" "/etc/$1/banhammer"
@@ -41,6 +53,10 @@ fi
 
 create_blank $WHITELIST
 create_blank $BLACKLIST
+
+if [ -s /etc/ban_hammer/whitelist ]; then
+  populate_whitelist
+fi
 
 install_cron cron.daily
 install_cron cron.hourly
