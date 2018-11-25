@@ -470,7 +470,7 @@ def command_purge(days)
 end
 
 def log(message)
-  ts = Time.now.strftime('%Y-%m-%d %H:%M:%S.%N')
+  ts = Time.now.strftime('%Y-%m-%d %H:%M:%S')
   $logger.puts "%s #%d: %s" % [ts, Process.pid, message]
 
   puts message
