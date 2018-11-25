@@ -34,6 +34,8 @@ populate_whitelist() {
   else 
     ifconfig | awk '/inet add/ { split($0, a, ":"); split(a[2], b, " "); print b[1] }' >> /etc/ban_hammer/whitelist
   fi
+
+  echo '# Done' >> /etc/ban_hammer/whitelist
 }
 
 install_cron() {
