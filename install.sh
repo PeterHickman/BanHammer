@@ -29,9 +29,9 @@ populate_whitelist() {
 
   echo '# Make sure we dont ban ourselves, that would be silly' >> /etc/ban_hammer/whitelist
 
-  if [ "$COUNT" = "0" ]; then 
+  if [ "$COUNT" = "0" ]; then
     ifconfig | awk '/inet / { split($0, a, " "); split(a[2], b, " "); print b[1] }' >> /etc/ban_hammer/whitelist
-  else 
+  else
     ifconfig | awk '/inet add/ { split($0, a, ":"); split(a[2], b, " "); print b[1] }' >> /etc/ban_hammer/whitelist
   fi
 
@@ -56,7 +56,9 @@ fi
 create_blank $WHITELIST
 create_blank $BLACKLIST
 
-if [ -s /etc/ban_hammer/whitelist ]; then
+test -s /etc/ban_hammer/whitelist
+
+if [ $? = "1" ]; then
   populate_whitelist
 fi
 
