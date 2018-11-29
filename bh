@@ -243,8 +243,19 @@ class ImportUFW
 end
 
 class UFW
-  def self.delete(number)
-    `echo y | ufw delete #{number}`
+  def self.delete(ip_address)
+    x = `ufw status numbered`
+
+    x.split("\n").each do |line|
+      next unless line.include?('DENY IN')
+
+      x = line.split(/\s+/).last
+      next unless x == ip_address
+
+      number = line.delete('[]').strip.split(/\s+/).first
+      `echo y | ufw delete #{number}`
+      break
+    end
   end
 
   def self.add(ip_address)
@@ -412,8 +423,7 @@ def command_remove(ip_address)
   end
 
   if $existing.key?(ip_address)
-    number = $existing[ip_address]
-    UFW.delete(number)
+    UFW.delete(ip_address)
     found = true
   end
 
