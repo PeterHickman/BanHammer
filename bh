@@ -252,9 +252,30 @@ class UFW
       x = line.split(/\s+/).last
       next unless x == ip_address
 
-      number = line.delete('[]').strip.split(/\s+/).first
+      number = line.delete('[]').strip.split(/\s+/).first.to_i
       `echo y | ufw delete #{number}`
       break
+    end
+  end
+
+  def self.purge(addresses)
+    numbers = []
+
+    x = `ufw status numbered`
+
+    x.split("\n").each do |line|
+      next unless line.include?('DENY IN')
+
+      address = line.split(/\s+/).last
+      next unless addresses.include?(address)
+
+      numbers << line.delete('[]').strip.split(/\s+/).first.to_i
+    end
+
+    numbers = numbers.sort.reverse
+
+    numbers.each do |number|
+      `echo y | ufw delete #{number}`
     end
   end
 
@@ -461,20 +482,21 @@ def command_purge(days)
   cut_off = Time.now.to_i - s
 
   log "Purging blacklist if address inactive for #{days} days"
-  count = 0
+  addresses = []
 
   $blacklist.each do |ip_address, ts|
     next if ts.to_i > cut_off
-    command_remove(ip_address)
-    ##
-    # Reload existing as the numbering will change. Oh this
-    # was a big issue. Believe me :(
-    ##
-    $existing = Existing.new
-    count += 1
+    addresses << ip_address
   end
 
-  log "#{count} removed. Blacklist has #{$blacklist.size} entries"
+  UFW.purge(addresses)
+  addresses.each do |address|
+    $blacklist.delete(address)
+  end
+
+  save_blacklist
+
+  log "#{addresses.size} removed. Blacklist has #{$blacklist.size} entries"
 end
 
 def log(message)
