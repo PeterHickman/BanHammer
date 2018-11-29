@@ -494,7 +494,7 @@ def command_purge(days)
     $blacklist.delete(address)
   end
 
-  save_blacklist
+  $blacklist.save
 
   log "#{addresses.size} removed. Blacklist has #{$blacklist.size} entries"
 end
