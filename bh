@@ -140,23 +140,23 @@ end
 
 class Existing < Addresslist
   def initialize
-    @addresses = {}
+    @addresses = []
 
     load
   end
 
   def key?(key)
-    in_list?(@addresses.keys, key)
+    in_list?(@addresses, key)
   end
 
   def [](key)
-    real = find_entry(@addresses.keys, key)
+    real = find_entry(@addresses, key)
     @addresses[real]
   end
 
   def <<(key)
     return if key.nil?
-    return if in_list?(@addresses.keys, key)
+    return if in_list?(@addresses, key)
     UFW.add(key)
     load
   end
@@ -252,16 +252,14 @@ class UFW
   end
 
   def self.load
-    addresses = {}
+    addresses = []
 
     x = `ufw status numbered`
 
     x.split("\n").each do |line|
       next unless line.include?('DENY IN')
 
-      line = line.delete('[').delete(']').strip
-      y = line.split(/\s+/)
-      addresses[y.last] = y.first
+      addresses << line.split(/\s+/).last
     end
 
     addresses
