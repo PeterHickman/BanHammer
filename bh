@@ -412,12 +412,12 @@ end
 def command_show
   puts "Whitelist (#{WHITELIST})"
   $whitelist.each do |ip_address|
-    puts "- #{ip_address}"
+    puts "w #{ip_address}"
   end
   puts
   puts "Blacklist (#{BLACKLIST})"
   $blacklist.each do |ip_address, _|
-    puts "- #{ip_address}"
+    puts "b #{ip_address}"
   end
   puts
 end
