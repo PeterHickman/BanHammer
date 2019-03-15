@@ -19,15 +19,15 @@ Run the `install.sh` script and `bh` will be installed to `/usr/local/sbin` and 
 
 	# bh show
 	Whitelist (/etc/ban_hammer/whitelist)
-	- X.X.X.X
+	w X.X.X.X
 	
 	Blacklist (/etc/ban_hammer/blacklist)
-	- 206.189.125.14
-	- 5.135.181.112
-	- 79.19.119.188
-	- 79.181.227.42
-	- 13.57.222.62
-	- 36.189.253.232
+	b 206.189.125.14
+	b 5.135.181.112
+	b 79.19.119.188
+	b 79.181.227.42
+	b 13.57.222.62
+	b 36.189.253.232
 
 Shows the whitelisted addresses and the blacklisted addresses
 
