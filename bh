@@ -175,8 +175,7 @@ class ImportAuth
   def self.import(filename)
     ##
     # Filter the auth.log file and find out who has been grinding
-    # at the ssh service and ban them. Only actually ban them when
-    # they hit > 100 attempts
+    # at the ssh service and ban them
     ##
 
     a = Hash.new(0)
@@ -194,7 +193,6 @@ class ImportAuth
     addresses = []
 
     a.each do |ip_address, count|
-      next if count < 100
       next if ip_address.nil?
       addresses << ip_address
     end
